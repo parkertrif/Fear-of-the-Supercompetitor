@@ -1,0 +1,298 @@
+
+
+# Fear of the supercompetitor? Deer respond more strongly to pigs than coyotes
+# Date: 10/17/2025
+
+library(lme4)
+library(ggeffects)
+library(gridExtra)
+library(emmeans)
+library(tidyverse)
+
+
+# DATA PREPARATION ----
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Load in data with filepath
+flight_model_data <- read_csv("PATH/flight_model_data.csv")
+vigilance_model_data <- read_csv("PATH/vigilance_model_data.csv")
+disturbance_model_data <- read_csv("PATH/disturbance_model_data.csv")
+aggregate_feeding_model_data <- read_csv("PATH/aggregate_feeding_model_data.csv")
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+# MODELS ----
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## Flight model
+flight_model <- glmer(fled ~ Treatment + sex + (1|ABR_site), 
+                      data = flight_model_data, family = binomial)
+
+## Vigilance model
+vigilance_model <- glmer(vigilance_increased ~ Treatment + sex + (1|ABR_site), 
+                         data = vigilance_model_data, family = binomial)
+
+## Disturbance model
+disturbance_model <- glmer(individual_disturbed ~ Treatment * sex + (1|ABR_site), 
+                           data = disturbance_model_data, family = binomial)
+
+## Aggregate feeding model
+aggregate_feeding_model <- glmer(total_videos ~ Treatment * sex + (1|ABR_site), 
+                                 data = aggregate_feeding_model_data, family = poisson())
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+# FLIGHT RESPONSE ----
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## Predict
+pred_flight_model <- ggpredict(flight_model, terms = c("Treatment", "sex"))
+
+## Split by sex
+pred_flight_model_male <- pred_flight_model[pred_flight_model$group == "male", ]
+pred_flight_model_female <- pred_flight_model[pred_flight_model$group == "female", ]
+
+## Males plot
+flight_plot_male <- ggplot(pred_flight_model_male, aes(x = x, y = predicted, fill = x)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7, 
+           color = "black", linewidth = 0.5) + 
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high),
+                position = position_dodge(width = 0.7),
+                width = 0.25, linewidth = 0.8) +
+  scale_fill_manual(values = c("CONTROL" = alpha("lightblue", 0.7), 
+                               "COYOTE" = alpha("#D55E00", 0.7), 
+                               "PIG" = alpha("#CC79A7", 0.7)),
+                    labels = c("CONTROL", "COYOTE", "PIG")) +
+  scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, by = 0.2)) +
+  labs(x = "Treatment",
+       y = "Probability of Flight Response",
+       fill = "Treatment",
+       title = "Adult Males") +
+  theme_classic() +
+  theme(text = element_text(family = "sans"),
+        axis.title = element_text(face = "bold"),
+        plot.title = element_text(size = 14, face = "bold"),
+        panel.border = element_rect(fill = NA, color = "black"),
+        axis.line = element_blank(),
+        legend.position = "top")
+
+## Females plot
+flight_plot_female <- ggplot(pred_flight_model_female, aes(x = x, y = predicted, fill = x)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7, 
+           color = "black", linewidth = 0.5) + 
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high),
+                position = position_dodge(width = 0.7),
+                width = 0.25, linewidth = 0.8) +
+  scale_fill_manual(values = c("CONTROL" = alpha("lightblue", 0.7), 
+                               "COYOTE" = alpha("#D55E00", 0.7), 
+                               "PIG" = alpha("#CC79A7", 0.7)),
+                    labels = c("CONTROL", "COYOTE", "PIG")) +
+  scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, by = 0.2)) +
+  labs(x = "Treatment",
+       y = "Probability of Flight Response",
+       fill = "Treatment",
+       title = "Adult Females") +
+  theme_classic() +
+  theme(text = element_text(family = "sans"),
+        axis.title = element_text(face = "bold"),
+        plot.title = element_text(size = 14, face = "bold"),
+        panel.border = element_rect(fill = NA, color = "black"),
+        axis.line = element_blank(),
+        legend.position = "top")
+
+## Dual plots
+flight_plot_male_mod <- flight_plot_male + 
+  theme(axis.title.x = element_blank(),
+        axis.text.x = element_blank())
+
+flight_plot_female_mod <- flight_plot_female + 
+  theme(axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank())
+
+grid.arrange(flight_plot_male_mod, flight_plot_female_mod, ncol = 2)
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+# VIGILANCE ----
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## Predict
+pred_vigilance_model <- ggpredict(vigilance_model, terms = c("Treatment", "sex"))
+
+## Split by sex
+pred_vigilance_model_male <- pred_vigilance_model[pred_vigilance_model$group == "male", ]
+pred_vigilance_model_female <- pred_vigilance_model[pred_vigilance_model$group == "female", ]
+
+## Males plot
+vigilance_plot_male <- ggplot(pred_vigilance_model_male, aes(x = x, y = predicted, fill = x)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7, 
+           color = "black", linewidth = 0.5) + 
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high),
+                position = position_dodge(width = 0.7),
+                width = 0.25, linewidth = 0.8) +
+  scale_fill_manual(values = c("CONTROL" = alpha("lightblue", 0.7), 
+                               "COYOTE" = alpha("#D55E00", 0.7), 
+                               "PIG" = alpha("#CC79A7", 0.7)),
+                    labels = c("CONTROL", "COYOTE", "PIG")) +
+  scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, by = 0.2)) +
+  labs(x = "Treatment",
+       y = "Probability of Increased Vigilance",
+       fill = "Treatment",
+       title = "Adult Males") +
+  theme_classic() +
+  theme(text = element_text(family = "sans"),
+        axis.title = element_text(face = "bold"),
+        plot.title = element_text(size = 14, face = "bold"),
+        panel.border = element_rect(fill = NA, color = "black"),
+        axis.line = element_blank(),
+        legend.position = "top")
+
+## Females plot
+vigilance_plot_female <- ggplot(pred_vigilance_model_female, aes(x = x, y = predicted, fill = x)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7, 
+           color = "black", linewidth = 0.5) + 
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high),
+                position = position_dodge(width = 0.7),
+                width = 0.25, linewidth = 0.8) +
+  scale_fill_manual(values = c("CONTROL" = alpha("lightblue", 0.7), 
+                               "COYOTE" = alpha("#D55E00", 0.7), 
+                               "PIG" = alpha("#CC79A7", 0.7)),
+                    labels = c("CONTROL", "COYOTE", "PIG")) +
+  scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, by = 0.2)) +
+  labs(x = "Treatment",
+       y = "Probability of Increased Vigilance",
+       fill = "Treatment",
+       title = "Adult Females") +
+  theme_classic() +
+  theme(text = element_text(family = "sans"),
+        axis.title = element_text(face = "bold"),
+        plot.title = element_text(size = 14, face = "bold"),
+        panel.border = element_rect(fill = NA, color = "black"),
+        axis.line = element_blank(),
+        legend.position = "top")
+
+## Dual plots
+vigilance_plot_male_mod <- vigilance_plot_male + 
+  theme(axis.title.x = element_blank(),
+        axis.text.x = element_blank())
+
+vigilance_plot_female_mod <- vigilance_plot_female + 
+  theme(axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank())
+
+grid.arrange(vigilance_plot_male_mod, vigilance_plot_female_mod, ncol = 2)
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+# DISTURBANCE ----
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## Predict
+pred_disturbance_model <- ggpredict(disturbance_model, terms = c("Treatment", "sex"))
+
+## Split by sex
+pred_disturbance_model_male <- pred_disturbance_model[pred_disturbance_model$group == "male", ]
+pred_disturbance_model_female <- pred_disturbance_model[pred_disturbance_model$group == "female", ]
+
+## Males plot
+disturbance_plot_male <- ggplot(pred_disturbance_model_male, aes(x = x, y = predicted, fill = x)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7, 
+           color = "black", linewidth = 0.5) + 
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high),
+                position = position_dodge(width = 0.7),
+                width = 0.25, linewidth = 0.8) +
+  scale_fill_manual(values = c("CONTROL" = alpha("lightblue", 0.7), 
+                               "COYOTE" = alpha("#D55E00", 0.7), 
+                               "PIG" = alpha("#CC79A7", 0.7)),
+                    labels = c("CONTROL", "COYOTE", "PIG")) +
+  scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, by = 0.2)) +
+  labs(x = "Treatment",
+       y = "Probability of Disturbance",
+       fill = "Treatment",
+       title = "Adult Males") +
+  theme_classic() +
+  theme(text = element_text(family = "sans"),
+        axis.title = element_text(face = "bold"),
+        plot.title = element_text(size = 14, face = "bold"),
+        panel.border = element_rect(fill = NA, color = "black"),
+        axis.line = element_blank(),
+        legend.position = "top")
+
+## Females plot
+disturbance_plot_female <- ggplot(pred_disturbance_model_female, aes(x = x, y = predicted, fill = x)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7, 
+           color = "black", linewidth = 0.5) + 
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high),
+                position = position_dodge(width = 0.7),
+                width = 0.25, linewidth = 0.8) +
+  scale_fill_manual(values = c("CONTROL" = alpha("lightblue", 0.7), 
+                               "COYOTE" = alpha("#D55E00", 0.7), 
+                               "PIG" = alpha("#CC79A7", 0.7)),
+                    labels = c("CONTROL", "COYOTE", "PIG")) +
+  scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, by = 0.2)) +
+  labs(x = "Treatment",
+       y = "Probability of Disturbance",
+       fill = "Treatment",
+       title = "Adult Females") +
+  theme_classic() +
+  theme(text = element_text(family = "sans"),
+        axis.title = element_text(face = "bold"),
+        plot.title = element_text(size = 14, face = "bold"),
+        panel.border = element_rect(fill = NA, color = "black"),
+        axis.line = element_blank(),
+        legend.position = "top")
+
+## Dual plots
+disturbance_plot_male_mod <- disturbance_plot_male + 
+  theme(axis.title.x = element_blank(),
+        axis.text.x = element_blank())
+
+disturbance_plot_female_mod <- disturbance_plot_female + 
+  theme(axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank())
+
+grid.arrange(disturbance_plot_male_mod, disturbance_plot_female_mod, ncol = 2)
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+# AGGREGATE FEEDING ----
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## Calculate estimated marginal means and pairwise comparisons
+emm <- emmeans(aggregate_feeding_model, ~ Treatment | sex)
+tukey_results <- pairs(emm, adjust = "tukey", reverse = TRUE)
+
+## Convert to dataframe and calculate confidence intervals
+tukey_df <- as.data.frame(tukey_results) %>%
+  mutate(
+    conf.low = estimate - 1.96 * SE,
+    conf.high = estimate + 1.96 * SE,
+    contrast = gsub(" - ", "\nvs\n", contrast)
+  )
+
+## Plot effect sizes
+aggregate_feeding_comparison_plot <- ggplot(tukey_df, aes(x = estimate, y = contrast, 
+                                                          group = sex, color = sex, shape = sex)) +
+  geom_point(size = 4, position = position_dodge(width = 0.5)) +  
+  geom_errorbarh(aes(xmin = conf.low, xmax = conf.high), height = 0.2, 
+                 position = position_dodge(width = 0.5)) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "gray40") +
+  scale_shape_manual(values = c("female" = 0, "male" = 15)) +  
+  scale_color_manual(values = c("female" = "black", "male" = "black")) +
+  scale_x_continuous(breaks = seq(-0.5, 0.5, by = 0.1)) +
+  labs(
+    x = "Coefficient Effect Size (log scale)",
+    y = "Treatment Comparison"
+  ) +
+  theme_classic() +
+  theme(
+    text = element_text(family = "sans", size = 14),
+    axis.title = element_text(face = "bold", size = 16),
+    axis.text = element_text(size = 10),
+    panel.border = element_rect(fill = NA, color = "black"),
+    axis.line = element_blank(),
+    legend.position = "top"
+  )
+
+print(aggregate_feeding_comparison_plot)
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
